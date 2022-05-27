@@ -1,16 +1,30 @@
-var gold = "XAUUSD"
-var platinum = "XPTUSD";
-var palladium = "XPDUSD"
-var silver = "XAGUSD";
+
+displayChart("XAUUSD", 10);
+
+var commodityList = document.querySelector("#commodities");
+var maPeriod = document.querySelector("#ma-period");
+var genBtn = document.querySelector("#generate");
+
+genBtn.addEventListener("click", () => 
+{
+    document.querySelector("#chart-one").innerHTML = "";
+
+    var selectedCommodity = commodityList.value;
+    var selectedPeriod = parseInt(maPeriod.value);
+
+    displayChart(selectedCommodity, selectedPeriod);
+});
 
 
 
+/*------------------------------------FUNCTIONS------------------------------*/
 
 
-
+function displayChart(commodity, period)
+{
     $.ajax
     ({
-        url: `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=XAUUSD&outputsize=compact&apikey=6N35E4TZCRQWCQMW`
+        url: `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${commodity}&outputsize=compact&apikey=6N35E4TZCRQWCQMW`
         
     }).done(function(rawData)
     {
@@ -18,38 +32,29 @@ var silver = "XAGUSD";
         var high = "2. high";
         var low = "3. low";
         var close = "4. close";
-        var period = 10;
 
         var dateRange = 
         {
             start: 99,
             end: 0,
-            maStart: (99 - period + 1)
         }
 
-        var dateArr = getDateArr(timeSeries, dateRange);
+        var dateArr = getDateArr(timeSeries, dateRange);              /*X AXIS ARRAY - DATESERIES*/
 
-        var candleDataset = createCandleChartDataset(timeSeries, dateRange, dateArr);
-
-        var priceCloseArr = getValArr(timeSeries, dateRange, close);
+        var priceCloseArr = getValArr(timeSeries, dateRange, close);       /*Y AXIS VALUE ARRAYS*/
         var priceLowArr = getValArr(timeSeries, dateRange, low);
         var priceHighArr = getValArr(timeSeries, dateRange, high);
-
-
         var maLowArr = calcMovingAverage(priceLowArr, period);
         var maHighArr = calcMovingAverage(priceHighArr, period);
 
-
+        var candleDataset = createCandleChartDataset(timeSeries, dateRange, dateArr);  /*DATASETS READY TO BE CHARTED*/
         var maLowDataset = createLineChartDataset(dateArr, maLowArr, period);
-
         var maHighDataset = createLineChartDataset(dateArr, maHighArr, period);
         var priceCloseDataset = createLineChartDataset(dateArr, priceCloseArr, period);
 
-
         generateChart(candleDataset, priceCloseDataset, maLowDataset, maHighDataset);
-
     });
-
+}
 
 function getDateArr(data, dateRange)
 {
@@ -170,10 +175,9 @@ function createLineChartDataset(dateArr, valArr, period)
     return dataset;
 }
 
-
 function generateChart(candleSet, priceSet, maSet1, maSet2)
 {
-    var options = 
+    var chartObject = 
     {
         series: 
         [{
@@ -231,7 +235,7 @@ function generateChart(candleSet, priceSet, maSet1, maSet2)
             }
         }
     }
-    var chart = new ApexCharts(document.querySelector("#chart-one"), options);
+    var chart = new ApexCharts(document.querySelector("#chart-one"), chartObject);
     chart.render();
 
     chart.toggleSeries("Price");
