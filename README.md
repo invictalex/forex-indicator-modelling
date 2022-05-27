@@ -12,4 +12,10 @@
 
 #Notes
 
-    -
+Desired features:
+
+1. A drop-down menu with commodity options, and another with Moving Average period
+
+2. Check-boxes for the following display options: Candlestick Prices, Prices (On Close), SSL Channel, SSL trade indicator
+
+You'll need a chart with all the series included on it. 

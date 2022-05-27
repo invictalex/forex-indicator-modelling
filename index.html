@@ -12,10 +12,63 @@
 </head>
 <body>
     <header>
-        <h1>Market Indicator Modelling</h1>
-    </header>
-    
 
+        <h2>Modelling SSL Indicators on Popular Commodities</h2>
+
+    </header>
+
+    <div class="options">
+
+        <div class="menus">
+            <label for="commodities">Commodity:</label>
+            <select id="commodities">
+                <option value="Gold">Gold</option>
+                <option value="Crude Oil">Crude Oil</option>
+                <option value="Copper">Copper</option>
+                <option value="Silver">Silver</option>
+            </select>
+        </div>
+        <div class="menus">
+            <label for="ma-period">Moving Average Period:</label>
+            <select id="ma-period">
+                <option value="10day">10 Day </option>
+                <option value="20day">20 Day</option>
+                <option value="50day">50 Day</option>
+            </select>
+            <input type="submit" id="generate" v alue="Generate">
+        </div>
+
+    </div>
+
+    <div class="charts">
+
+        <div id="chart-one"></div>
+
+    </div>
+    
+    <div class="options two">
+
+        <div class="checkboxes">
+            <label for="candles">Candles</label>
+            <input type="checkbox" id="candles" checked>
+        </div>
+        <div class="checkboxes">
+            <label for="price">Price</label>
+            <input type="checkbox" id="price">
+        </div>
+        <div class="checkboxes">
+            <label for="ssl-channel">SSL Channel</label>
+            <input type="checkbox" id="ssl-channel">
+        </div>
+        <div class="checkboxes">
+            <label for="ssl-trade-indicator">SSL Trade Indicator</label>
+            <input type="checkbox" id="ssl-trade-indicator">
+        </div>
+
+        <div id="click-me">click me</div>
+
+    </div>
+    
     <script src="script.js"> </script>
 </body>
 </html>
