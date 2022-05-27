@@ -1,5 +1,6 @@
+var chart;
 
-displayChart("XAUUSD", 10);
+genEmptyChart();
 
 var commodityList = document.querySelector("#commodities");
 var maPeriod = document.querySelector("#ma-period");
@@ -7,53 +8,113 @@ var genBtn = document.querySelector("#generate");
 
 genBtn.addEventListener("click", () => 
 {
-    document.querySelector("#chart-one").innerHTML = "";
+    var commodity = commodityList.value;
+    var period = parseInt(maPeriod.value);
 
-    var selectedCommodity = commodityList.value;
-    var selectedPeriod = parseInt(maPeriod.value);
+    updateChart(chart, commodity, period)
+})
 
-    displayChart(selectedCommodity, selectedPeriod);
-});
-
-
-
-/*------------------------------------FUNCTIONS------------------------------*/
-
-
-function displayChart(commodity, period)
+function updateChart(chart, commodity, period)
 {
-    $.ajax
+    console.log("hello");
+    var ajaxData = getAjaxData(commodity);
+
+    ajaxData.done(function(rawData)
+    {
+        var seriesObj = ajaxToSeries(rawData, period);
+
+        chart.updateSeries(seriesObj);
+
+        
+    });
+}
+
+function genEmptyChart()
+{
+    var options = 
+    {
+        chart: 
+        {
+            height: 350,
+            type: 'line',
+        },
+        dataLabels: 
+        {
+            enabled: false
+        },
+        series: [],
+        noData: 
+        {
+          text: 'Please select inputs...'
+        },
+        stroke: 
+        {
+            width: [2, 2, 2, 2],
+        },
+        tooltip:
+        {
+            enabled: false
+        },
+        xaxis: 
+        {
+        type: 'datetime'
+        },
+        theme: 
+        {
+            mode: 'dark', 
+            palette: 'palette2', 
+            monochrome: 
+            {
+                enabled: false,
+                color: '#255aee',
+                shadeTo: 'light',
+                shadeIntensity: 0.65
+            }
+        }
+    }
+      
+    chart = new ApexCharts(document.querySelector("#chart-one"),options);
+      
+    chart.render();
+}
+
+function getAjaxData(commodity)
+{
+    return $.ajax
     ({
         url: `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${commodity}&outputsize=compact&apikey=6N35E4TZCRQWCQMW`
-        
-    }).done(function(rawData)
+    })
+}
+
+function ajaxToSeries(rawData, period)
+{    
+    var timeSeries = rawData["Time Series (Daily)"];
+    var high = "2. high";
+    var low = "3. low";
+    var close = "4. close";
+
+    var dateRange = 
     {
-        var timeSeries = rawData["Time Series (Daily)"];
-        var high = "2. high";
-        var low = "3. low";
-        var close = "4. close";
+        start: 99,
+        end: 0,
+    }
 
-        var dateRange = 
-        {
-            start: 99,
-            end: 0,
-        }
+    var dateArr = getDateArr(timeSeries, dateRange);              /*X AXIS ARRAY - DATESERIES*/
 
-        var dateArr = getDateArr(timeSeries, dateRange);              /*X AXIS ARRAY - DATESERIES*/
+    var priceCloseArr = getValArr(timeSeries, dateRange, close);       /*Y AXIS VALUE ARRAYS*/
+    var priceLowArr = getValArr(timeSeries, dateRange, low);
+    var priceHighArr = getValArr(timeSeries, dateRange, high);
+    var maLowArr = calcMovingAverage(priceLowArr, period);
+    var maHighArr = calcMovingAverage(priceHighArr, period);
 
-        var priceCloseArr = getValArr(timeSeries, dateRange, close);       /*Y AXIS VALUE ARRAYS*/
-        var priceLowArr = getValArr(timeSeries, dateRange, low);
-        var priceHighArr = getValArr(timeSeries, dateRange, high);
-        var maLowArr = calcMovingAverage(priceLowArr, period);
-        var maHighArr = calcMovingAverage(priceHighArr, period);
+    var candleDataset = createCandleChartDataset(timeSeries, dateRange, dateArr);  /*DATASETS READY TO BE CHARTED*/
+    var maLowDataset = createLineChartDataset(dateArr, maLowArr, period);
+    var maHighDataset = createLineChartDataset(dateArr, maHighArr, period);
+    var priceCloseDataset = createLineChartDataset(dateArr, priceCloseArr, period);
 
-        var candleDataset = createCandleChartDataset(timeSeries, dateRange, dateArr);  /*DATASETS READY TO BE CHARTED*/
-        var maLowDataset = createLineChartDataset(dateArr, maLowArr, period);
-        var maHighDataset = createLineChartDataset(dateArr, maHighArr, period);
-        var priceCloseDataset = createLineChartDataset(dateArr, priceCloseArr, period);
+    var seriesObj = genSeriesObj(candleDataset, maLowDataset, maHighDataset, priceCloseDataset);
 
-        generateChart(candleDataset, priceCloseDataset, maLowDataset, maHighDataset);
-    });
+    return seriesObj;
 }
 
 function getDateArr(data, dateRange)
@@ -175,83 +236,30 @@ function createLineChartDataset(dateArr, valArr, period)
     return dataset;
 }
 
-function generateChart(candleSet, priceSet, maSet1, maSet2)
+function genSeriesObj(candle, maSet1, maSet2, priceSet)
 {
-    var chartObject = 
+    var seriesObj = 
+    [{
+        name: 'Candlestick',
+        type: 'candlestick',
+        data: candle
+    },
     {
-        series: 
-        [{
-            name: 'Candlestick',
-            type: 'candlestick',
-            data: candleSet
-        },
-        {
-            name: 'Price',
-            type: 'line',
-            data: priceSet
-        },
-        {
-            name: 'Low MA',
-            type: 'line',
-            data: maSet1
-        },
-        {
-            name: 'High MA',
-            type: 'line',
-            data: maSet2
-        }],
-        chart: 
-        {
-            height: 350,
-            type: 'line',
-        },
-        title: 
-        {
-            text: 'CandleStick Chart',
-            align: 'left'
-        },
-        stroke: 
-        {
-            width: [2, 2, 2],
-        },
-        tooltip:
-        {
-            enabled: false
-        },
-        xaxis: 
-        {
-        type: 'datetime'
-        },
-        theme: 
-        {
-            mode: 'dark', 
-            palette: 'palette1', 
-            monochrome: 
-            {
-                enabled: false,
-                color: '#255aee',
-                shadeTo: 'light',
-                shadeIntensity: 0.65
-            }
-        }
-    }
-    var chart = new ApexCharts(document.querySelector("#chart-one"), chartObject);
-    chart.render();
-
-    chart.toggleSeries("Price");
-    chart.toggleSeries("Low MA");
-    chart.toggleSeries("High MA");
-
-    var candleCB = document.getElementById("candles");
-    var priceCB = document.getElementById("price");
-    var sslChannelCB = document.getElementById("ssl-channel");
-
-    candleCB.addEventListener("change", () => chart.toggleSeries("Candlestick"));
-    priceCB.addEventListener("change", () => chart.toggleSeries("Price"));
-    sslChannelCB.addEventListener("change", () => 
+        name: 'Low-MA',
+        type: 'line',
+        data: maSet1
+    },
     {
-        chart.toggleSeries("Low MA");
-        chart.toggleSeries("High MA");
-    });
-    
+        name: 'High-MA',
+        type: 'line',
+        data: maSet2
+    },
+    {
+        name: 'Price',
+        type: 'line',
+        data: priceSet
+    }]
+
+    return seriesObj;
 }
+
