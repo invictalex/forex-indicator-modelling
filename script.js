@@ -14,9 +14,49 @@ genBtn.addEventListener("click", () =>
     updateChart(chart, commodity, period)
 })
 
+var candlesChkbx = document.querySelector("#candles");
+var priceChkbx = document.querySelector("#price");
+var sslChannelChkbx = document.querySelector("#ssl-channel");
+
+toggleSeriesOnCheck(candlesChkbx, "Candlestick");
+toggleSeriesOnCheck(priceChkbx, "Price");
+toggleSeriesOnCheck(sslChannelChkbx, "Low-MA", "High-MA");
+
+function toggleSeriesOnCheck(checkbox, series, series1)
+{
+    if (series1)
+    {
+        checkbox.addEventListener("click", () => 
+        {
+            if (checkbox.checked === true)
+            {
+                chart.showSeries(series)
+                chart.showSeries(series1)
+            } else if (checkbox.checked === false)
+            {
+                chart.toggleSeries(series);
+                chart.toggleSeries(series1);
+            }
+        })
+    } else
+    {
+        checkbox.addEventListener("click", () => 
+        {
+            if (checkbox.checked === true)
+            {
+                chart.showSeries(series)
+            } else if (checkbox.checked === false)
+            {
+                chart.toggleSeries(series);
+            }
+        })
+    }
+   
+}
+
+
 function updateChart(chart, commodity, period)
 {
-    console.log("hello");
     var ajaxData = getAjaxData(commodity);
 
     ajaxData.done(function(rawData)
@@ -24,8 +64,6 @@ function updateChart(chart, commodity, period)
         var seriesObj = ajaxToSeries(rawData, period);
 
         chart.updateSeries(seriesObj);
-
-        
     });
 }
 
@@ -232,7 +270,6 @@ function createLineChartDataset(dateArr, valArr, period)
             dataset.push(newDataPoint);
         }
     }
-
     return dataset;
 }
 
