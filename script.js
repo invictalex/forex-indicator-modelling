@@ -1,26 +1,33 @@
 var chart;
 
-genEmptyChart();
-
 var commodityList = document.querySelector("#commodities");
 var maPeriod = document.querySelector("#ma-period");
 var genBtn = document.querySelector("#generate");
 
+var candlesChkbx = document.querySelector("#candles");
+var priceChkbx = document.querySelector("#price");
+var sslChannelChkbx = document.querySelector("#ssl-channel");
+var tradeSuggestionsChkbx = document.querySelector("#trade-suggestions");
+
+genEmptyChart();
+updateChart(chart, "XAUUSD", 10);
+
 genBtn.addEventListener("click", () => 
 {
+    resetCheckboxes(candlesChkbx, priceChkbx, sslChannelChkbx, tradeSuggestionsChkbx); 
+
     var commodity = commodityList.value;
     var period = parseInt(maPeriod.value);
 
     updateChart(chart, commodity, period)
 })
 
-var candlesChkbx = document.querySelector("#candles");
-var priceChkbx = document.querySelector("#price");
-var sslChannelChkbx = document.querySelector("#ssl-channel");
-
 toggleSeriesOnCheck(candlesChkbx, "Candlestick");
 toggleSeriesOnCheck(priceChkbx, "Price");
 toggleSeriesOnCheck(sslChannelChkbx, "Low-MA", "High-MA");
+toggleSeriesOnCheck(tradeSuggestionsChkbx, "Buy", "Sell");
+
+
 
 function toggleSeriesOnCheck(checkbox, series, series1)
 {
@@ -51,9 +58,15 @@ function toggleSeriesOnCheck(checkbox, series, series1)
             }
         })
     }
-   
 }
 
+function resetCheckboxes(candlesChkbx, priceChkbx, sslChannelChkbx, tradeSuggestionsChkbx)
+{
+    candlesChkbx.checked = true;
+    priceChkbx.checked = true;
+    sslChannelChkbx.checked = true;
+    tradeSuggestionsChkbx.checked = true;
+}
 
 function updateChart(chart, commodity, period)
 {
@@ -64,6 +77,7 @@ function updateChart(chart, commodity, period)
         var seriesObj = ajaxToSeries(rawData, period);
 
         chart.updateSeries(seriesObj);
+
     });
 }
 
@@ -87,7 +101,13 @@ function genEmptyChart()
         },
         stroke: 
         {
-            width: [2, 2, 2, 2],
+            width: [2, 2, 2, 2, 0, 0]
+        },
+        markers:
+        {
+            size: [0, 0, 0, 0, 5, 5],
+            colors: ["white", "white", "white", "white", "green", "red"],
+            strokeColors: "black"
         },
         tooltip:
         {
@@ -97,6 +117,15 @@ function genEmptyChart()
         {
         type: 'datetime'
         },
+        yaxis: [{
+            "labels": 
+            {
+                "formatter": function (val) 
+                {
+                    return val.toFixed(0)
+                }
+            }
+        }],
         theme: 
         {
             mode: 'dark', 
@@ -149,8 +178,12 @@ function ajaxToSeries(rawData, period)
     var maLowDataset = createLineChartDataset(dateArr, maLowArr, period);
     var maHighDataset = createLineChartDataset(dateArr, maHighArr, period);
     var priceCloseDataset = createLineChartDataset(dateArr, priceCloseArr, period);
+    
 
-    var seriesObj = genSeriesObj(candleDataset, maLowDataset, maHighDataset, priceCloseDataset);
+    var buyIndicators = createTradeDataset("buy", dateArr, priceCloseArr, maHighArr, period);
+    var sellIndicators = createTradeDataset("sell", dateArr, priceCloseArr, maLowArr, period);
+
+    var seriesObj = genSeriesObj(candleDataset, maLowDataset, maHighDataset, priceCloseDataset, buyIndicators, sellIndicators);
 
     return seriesObj;
 }
@@ -273,7 +306,7 @@ function createLineChartDataset(dateArr, valArr, period)
     return dataset;
 }
 
-function genSeriesObj(candle, maSet1, maSet2, priceSet)
+function genSeriesObj(candle, maSet1, maSet2, priceSet, buySet, sellSet)
 {
     var seriesObj = 
     [{
@@ -295,8 +328,54 @@ function genSeriesObj(candle, maSet1, maSet2, priceSet)
         name: 'Price',
         type: 'line',
         data: priceSet
+    },
+    {
+        name: 'Buy',
+        type: 'line',
+        data: buySet
+    },
+    {
+        name: 'Sell',
+        type: 'line',
+        data: sellSet
     }]
 
     return seriesObj;
 }
 
+function createTradeDataset(type, dateArr, valArr, maSet, period)
+{
+    var dataset = [];
+
+    if (type == "buy")
+    {
+        for (let i = 0; i < maSet.length; i++)
+        {
+            if ((maSet[i] <= valArr[i + period - 1]) && (maSet[i-1] >= valArr[i + period - 2]))
+            {
+                var newPoint = 
+                {
+                    x: dateArr[i + period - 1],
+                    y: valArr[i + period - 1]
+                }
+                dataset.push(newPoint);
+            }
+        }
+    } else if (type == "sell")
+    {
+        for (let i = 0; i < maSet.length; i++)
+        {
+            if ((maSet[i] >= valArr[i + period - 1]) && (maSet[i-1] <= valArr[i + period - 2]))
+            {
+                var newPoint = 
+                {
+                    x: dateArr[i + period - 1],
+                    y: valArr[i + period - 1]
+                }
+                dataset.push(newPoint);
+            }
+        }
+    }
+
+    return dataset;
+}
